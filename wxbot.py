@@ -12,8 +12,13 @@ import json
 import xml.dom.minidom
 import urllib
 import time
+import schedule
 import re
+import urllib2
 import random
+import json
+import datetime
+import threading
 from traceback import format_exc
 from requests.exceptions import ConnectionError, ReadTimeout
 import HTMLParser
@@ -1204,7 +1209,46 @@ class WXBot:
             if self.get_contact():
                 print '[INFO] Get %d contacts' % len(self.contact_list)
                 print '[INFO] Start to process messages .'
+            self.send_group_info()
             self.proc_msg()
+            self.status = 'loginout'
+        except Exception,e:
+            print '[ERROR] Web WeChat run failed --> %s'%(e)
+            self.status = 'loginout'
+
+    def script_run(self):
+        try:
+            self.get_uuid()
+            self.gen_qr_code(os.path.join(self.temp_pwd,'wxqr.png'))
+            print '[INFO] Please use WeChat to scan the QR code .'
+
+            result = self.wait4login()
+            if result != SUCCESS:
+                print '[ERROR] Web WeChat login failed. failed code=%s' % (result,)
+                self.status = 'loginout'
+                return
+
+            if self.login():
+                print '[INFO] Web WeChat login succeed .'
+            else:
+                print '[ERROR] Web WeChat login failed .'
+                self.status = 'loginout'
+                return
+
+            if self.init():
+                print '[INFO] Web WeChat init succeed .'
+            else:
+                print '[INFO] Web WeChat init failed'
+                self.status = 'loginout'
+                return
+            self.status_notify()
+            if self.get_contact():
+                print '[INFO] Get %d contacts' % len(self.contact_list)
+                print '[INFO] Start to process messages .'
+            schedule.every().day.at("15:19").do(self.send_group_info)
+            while True:
+                schedule.run_pending()
+                time.sleep(60) # wait one minute
             self.status = 'loginout'
         except Exception,e:
             print '[ERROR] Web WeChat run failed --> %s'%(e)
@@ -1509,3 +1553,27 @@ class WXBot:
             return dic['BaseResponse']['ErrMsg']
         except:
             return None
+
+    def send_group_info(self):
+        gid = ''
+        # 通过群名获取群id,群没保存到通讯录中的话无法添加哦
+        count = 0
+        for group in self.group_list:
+            count = count + 1
+            if count is 1:
+                gid = group['UserName']
+        if gid == '':
+            print 'can not find the group'
+        else:
+            response = urllib2.urlopen('http://1-dot-cmpe202wings.appspot.com/cmpe202wings')
+            info = json.load(response)
+            origin = '.*' + datetime.date.today().strftime("%A") + '.*'
+            result = ''
+            for d in info:
+                if re.match(origin, d['room']):
+                        result = result + d['room'] + '\n'
+            print result
+            # self.send_msg_by_uid(u"整点播报,,Ծ‸Ծ,,", gid)
+            # self.send_msg_by_uid(result, gid)
+            # print gid
+
