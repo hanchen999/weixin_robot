@@ -1245,7 +1245,7 @@ class WXBot:
             if self.get_contact():
                 print '[INFO] Get %d contacts' % len(self.contact_list)
                 print '[INFO] Start to process messages .'
-            schedule.every().day.at("15:19").do(self.send_group_info)
+            schedule.every().day.at("17:00").do(self.send_group_info)
             while True:
                 schedule.run_pending()
                 time.sleep(60) # wait one minute
@@ -1573,7 +1573,7 @@ class WXBot:
                 if re.match(origin, d['room']):
                         result = result + d['room'] + '\n'
             print result
-            # self.send_msg_by_uid(u"整点播报,,Ծ‸Ծ,,", gid)
-            # self.send_msg_by_uid(result, gid)
-            # print gid
+            self.send_msg_by_uid(u"整点播报,,Ծ‸Ծ,,", gid)
+            self.send_msg_by_uid(result, gid)
+            print gid
 
