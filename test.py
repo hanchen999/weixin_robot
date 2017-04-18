@@ -23,7 +23,7 @@ def send_group_info(WXBot):
 def main():
 	bot = MyWXBot()
 	bot.DEBUG = True
-	bot.conf['qr'] = 'png'
+	bot.conf['qr'] = 'tty'
 	bot.script_run()
 
 
